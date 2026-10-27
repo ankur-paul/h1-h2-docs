@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lattice</title>
+<meta name="description" content="Lattice: clash-free weekly class timetables for a whole college. What it is, how it's built, how to test it and its main features.">
+<link rel="icon" href="img/logo.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#2A2B30;padding:24px 16px}
+.frame{width:100%;max-width:1600px;aspect-ratio:16/9;margin:0 auto 24px;overflow:hidden;position:relative;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.35)}
+.slide{width:1920px;height:1080px;position:absolute;left:0;top:0;transform-origin:0 0}
+section{width:1920px;height:1080px;position:relative}
+h1,h2,h3,p,ul,ol,hr{margin:0}ul,ol{padding-left:1.25em}li{padding-left:.2em}aside{display:none}
+hr{border:none;width:100%}a{color:inherit;text-decoration:underline}
+table{border-collapse:collapse;width:100%}th,td{padding:.35em .6em;border-bottom:1px solid rgba(128,128,128,.4);vertical-align:top}th{font-weight:600}
+@media print{body{background:none;padding:0}.frame{max-width:none;border-radius:0;box-shadow:none;margin:0;break-after:page}}
+</style>
+</head>
+<body>
+<div class="frame" id="slide-1" aria-label="Slide 1"><div class="slide"><section id="cover" data-transition="fade" style="background:#17181C;color:#F2F2EC;font-family:'DM Sans', Arial, sans-serif;padding:128px;display:grid;grid-template-columns:640px 960px;gap:64px;align-items:center">
+<div style="display:flex;flex-direction:column;gap:32px">
+<img src="img/logo.png" alt="Lattice logo: a 3×3 timetable grid with an L filled in" style="width:112px;height:112px;object-fit:contain">
+<h1 style="font-size:120px;font-weight:700;line-height:1.0;letter-spacing:-2px;color:#F2F2EC">Lattice</h1>
+<p style="font-size:40px;line-height:1.3;color:#F2F2EC">Clash-free weekly class timetables for a whole college</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:30px;color:#7FD4A8"><a href="https://uselattice.app">uselattice.app</a></p>
+<p style="font-size:30px;color:#B9BCC3">Ankur Paul</p>
+</div>
+</div>
+<img src="img/step4.png" alt="Lattice step 4: the week timetable for section CSE A, each subject in its own colour" style="width:960px;height:600px;object-fit:cover;border-radius:16px;border:1px solid #3A3C44;box-shadow:0 24px 64px rgba(0,0,0,0.45)">
+<aside>Lattice builds a weekly class timetable for a whole college, with no teacher, section or room booked twice. It's live at uselattice.app and works without an account.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-2" aria-label="Slide 2"><div class="slide"><section id="problem" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">The problem</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:64px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Today</p>
+<p style="font-size:40px;line-height:1.3;color:#17181C">Most colleges still make the timetable by hand in a spreadsheet. It takes days, and one change, like a teacher leaving, can cause clashes across a dozen sections.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">With Lattice</p>
+<p style="font-size:40px;line-height:1.3;color:#17181C">Enter the week, rooms, teachers, sections and courses, then click <b>Generate timetable</b>. A solver finds the best timetable it can, and a separate checker confirms nothing is booked twice.</p>
+</div>
+</div>
+<div style="display:flex;gap:16px">
+<p style="flex:1;font-size:30px;font-weight:600;background:#ECECE6;padding:24px 28px;border-radius:12px">① Setup week</p>
+<p style="flex:1;font-size:30px;font-weight:600;background:#ECECE6;padding:24px 28px;border-radius:12px">② Add data</p>
+<p style="flex:1;font-size:30px;font-weight:600;background:#ECECE6;padding:24px 28px;border-radius:12px">③ Generate</p>
+<p style="flex:1;font-size:30px;font-weight:600;background:#ECECE6;padding:24px 28px;border-radius:12px">④ View &amp; export</p>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 2</p>
+<aside>The app walks a coordinator through four steps. Signing in is optional: the whole flow works signed out, saved in the browser.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-3" aria-label="Slide 3"><div class="slide"><section id="built" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">How it’s built</h2>
+<div style="position:absolute;left:128px;top:260px;width:620px;height:560px;background:#FFFFFC;border:2px solid #17181C;border-radius:16px;padding:36px;display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Browser · Cloudflare Pages</p>
+<h3 style="font-size:36px;font-weight:700;line-height:1.2">React + TypeScript app</h3>
+<ul style="font-size:28px;line-height:1.35;color:#4A4F57;display:flex;flex-direction:column;gap:12px">
+<li>Four-step guided flow, saved in the browser</li>
+<li>Quick-draft heuristic in a Web Worker, for when the server is down</li>
+<li>Validator re-checks every result against H1–H8</li>
+<li>Scorer computes S1–S5 for both engines</li>
+</ul>
+</div>
+<div style="position:absolute;left:1012px;top:260px;width:780px;height:170px;background:#FFFFFC;border:1px solid #C9CBC3;border-radius:16px;padding:24px 32px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:700">Solver · AWS Lambda, Mumbai</h3>
+<p style="font-size:24px;line-height:1.35;color:#4A4F57">FastAPI + OR-Tools CP-SAT. Finds the best timetable, or proves none exists and says why.</p>
+</div>
+<div style="position:absolute;left:1012px;top:455px;width:780px;height:170px;background:#FFFFFC;border:1px solid #C9CBC3;border-radius:16px;padding:24px 32px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:700">Assistant · AWS Lambda</h3>
+<p style="font-size:24px;line-height:1.35;color:#4A4F57">Claude answers questions and proposes changes as cards. Teacher names leave the browser as codes.</p>
+</div>
+<div style="position:absolute;left:1012px;top:650px;width:780px;height:170px;background:#FFFFFC;border:1px solid #C9CBC3;border-radius:16px;padding:24px 32px;display:flex;flex-direction:column;gap:8px">
+<h3 style="font-size:30px;font-weight:700">Supabase · Mumbai</h3>
+<p style="font-size:24px;line-height:1.35;color:#4A4F57">Sign-in, institutes and roles under row-level security, saved versions, public links.</p>
+</div>
+<svg aria-hidden="true" style="position:absolute;left:0;top:0" width="1920" height="1080"><defs><marker id="a748345" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#17181C"/></marker></defs><line x1="752" y1="345" x2="1008" y2="345" stroke="#17181C" stroke-width="3" marker-start="url(#a748345)" marker-end="url(#a748345)"/></svg>
+<svg aria-hidden="true" style="position:absolute;left:0;top:0" width="1920" height="1080"><defs><marker id="a748540" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#17181C"/></marker></defs><line x1="752" y1="540" x2="1008" y2="540" stroke="#17181C" stroke-width="3" marker-start="url(#a748540)" marker-end="url(#a748540)"/></svg>
+<svg aria-hidden="true" style="position:absolute;left:0;top:0" width="1920" height="1080"><defs><marker id="a748735" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#17181C"/></marker></defs><line x1="752" y1="735" x2="1008" y2="735" stroke="#17181C" stroke-width="3" marker-start="url(#a748735)" marker-end="url(#a748735)"/></svg>
+<p style="position:absolute;left:770px;top:296px;width:230px;font-size:24px;color:#4A4F57">/solve</p>
+<p style="position:absolute;left:770px;top:491px;width:230px;font-size:24px;color:#4A4F57">/agent</p>
+<p style="position:absolute;left:770px;top:686px;width:230px;font-size:24px;color:#4A4F57">auth, data</p>
+<p style="position:absolute;left:128px;top:846px;width:1664px;font-size:26px;line-height:1.35;color:#17181C">One JSON contract (<span style="color:#0B7A4B">SolveInput</span> / <span style="color:#0B7A4B">SolveResult</span>) for both engines · ~1,090 Vitest and 802 Pytest tests run in GitHub Actions before every deploy</p>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 3</p>
+<aside>The browser does the checking: whichever engine made a timetable, the same TypeScript validator and scorer judge it. The server is one Docker image that runs as two Lambda functions. Deploys run from GitHub Actions after CI passes, then a smoke check runs; a rollback workflow redeploys an older commit.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-4" aria-label="Slide 4"><div class="slide"><section id="rules" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">The rules a timetable follows</h2>
+<div style="display:grid;grid-template-columns:720px 880px;gap:64px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Hard rules · never broken</p>
+<ul style="font-size:28px;line-height:1.35;color:#17181C;display:flex;flex-direction:column;gap:14px">
+<li>A teacher, a section and a room are each in one class at a time (H1–H3)</li>
+<li>The room type and department fit the class (H4)</li>
+<li>Every class is placed once, or listed with a reason (H5)</li>
+<li>A lab fills consecutive periods, never across a break (H6)</li>
+<li>Nothing is placed in a break (H7)</li>
+<li>Every section and teacher gets a free lunch period each day (H8)</li>
+</ul>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Soft rules · points, lower is better</p>
+<table style="font-size:26px;color:#17181C">
+<tr><th style="width:66%;text-align:left">Rule</th><th style="width:34%;text-align:left">Points</th></tr>
+<tr><td>Same subject twice in a day (S1)</td><td>10 per extra lecture</td></tr>
+<tr><td>Teacher teaching over 3 in a row (S2)</td><td>5 per period</td></tr>
+<tr><td>Free periods between classes (S3)</td><td>2 per period</td></tr>
+<tr><td>A batch idle during another’s lab (S4)</td><td>3 per period</td></tr>
+<tr><td>Free periods before the day’s last class (S5, off by default)</td><td>1 per period</td></tr>
+</table>
+<p style="font-size:24px;line-height:1.35;color:#4A4F57">Each soft rule can be switched off under <b>Aims</b>.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 4</p>
+<aside>Hard rules decide whether a timetable is valid; soft rules decide which valid timetable is best. The sample college's best score is 18, all of it from batches waiting during labs.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-5" aria-label="Slide 5"><div class="slide"><section id="looks" data-transition="fade" style="background:#ECECE6;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">What it looks like</h2>
+<div style="display:flex;gap:64px;align-items:start">
+<img src="img/step4.png" alt="Step 4 View and export: section CSE A's week, with the score chips above the grid" style="width:1065px;height:666px;object-fit:contain;background:#F6F6F2;border-radius:12px;border:1px solid #C9CBC3">
+<ul style="width:535px;font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:20px">
+<li>Step ④ shows the week for one section, teacher or room</li>
+<li>Each subject has its own colour, and a lab spans its periods</li>
+<li>Batch labs (B1, B2) stack in one cell; 🍽 marks the lunch candidates</li>
+<li>The green badge says how many clashes the browser’s own check found: 0</li>
+</ul>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 5</p>
+<aside>This is the sample college after one Generate on the live site: score 18, 0 clashes.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-6" aria-label="Slide 6"><div class="slide"><section id="test" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">How to test it</h2>
+<div style="display:grid;grid-template-columns:760px 840px;gap:64px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Five minutes, no account</p>
+<ol style="font-size:30px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:16px">
+<li>Open <b>uselattice.app</b></li>
+<li>② Add data → <b>Load sample</b></li>
+<li>③ Generate → <b>Generate timetable</b>. It takes about 20 s; the first run after the server idles takes longer.</li>
+<li>④ View &amp; export → switch views, drag a class, lock one and <b>Regenerate</b>, <b>Print</b></li>
+</ol>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Testing files · testing-data folder</p>
+<table style="font-size:24px;color:#17181C">
+<tr><th style="width:42%;text-align:left">File</th><th style="width:58%;text-align:left">What you should see</th></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace"><a href="testing-data/sample-college.xlsx">sample-college.xlsx</a></td><td>The sample college; imports cleanly</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace"><a href="testing-data/broken-import.xlsx">broken-import.xlsx</a></td><td>Nothing imported; 3 errors listed by row</td></tr>
+<tr><td style="font-family:'JetBrains Mono', 'Courier New', monospace"><a href="testing-data/cannot-be-built.xlsx">cannot-be-built.xlsx</a></td><td>“Can’t be built”, with the cause and a fix</td></tr>
+</table>
+<p style="font-size:26px;line-height:1.4;color:#17181C;background:#ECECE6;padding:24px 28px;border-radius:12px">Signed-in features: sign in with Google or an email link. The assistant needs a coupon; the codes are in the submission notes.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 6</p>
+<aside>The Excel files hold the data, not the week. In a fresh browser, click Load sample once first so step 1 has the sample week, then upload a file in step 2. The folder's README says what each file should show.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-7" aria-label="Slide 7"><div class="slide"><section id="f-setup" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ① · Setup week</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Set up the week</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Tick the working days</li>
+<li><b>Generate periods</b> from a start time, length, count and break, or edit each row</li>
+<li>Mark the periods where lunch may fall</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">Every section and teacher gets one of the marked periods free each day (H8). The solver picks which one, so lunch can move to fit the classes.</p>
+</div>
+<img src="img/step1.png" alt="Step 1 Setup week: working days Mon to Fri and the period table P1 to P8 with a break after P2" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 7</p>
+<aside>Load sample fills this step too: Monday to Friday, eight periods, a break after P2, lunch candidates P4 to P6.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-8" aria-label="Slide 8"><div class="slide"><section id="f-data" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ② · Add data</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Add the college’s data</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li><b>Load sample</b>, or download the <b>Template</b> and fill it in</li>
+<li><b>Choose file</b> to upload the .xlsx, or one CSV per sheet</li>
+<li>Check the summary and edit any table in place</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">Checks run as you edit. A class with no eligible room blocks <b>Next</b>; a teacher or room booked past the week gets a warning.</p>
+</div>
+<img src="img/step2.png" alt="Step 2 Add data: Load sample, Template and Choose file cards, then counts and load bars for the busiest sections" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 8</p>
+<aside>Rooms can be shared or owned by a department, and a section can split into lab batches, each with its own lab teacher. The tables open in dependency order: departments, rooms, teachers, sections, courses.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-9" aria-label="Slide 9"><div class="slide"><section id="f-import" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ② · Add data</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Import errors by row</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Upload <span style="color:#0B7A4B"><a href="testing-data/broken-import.xlsx">broken-import.xlsx</a></span></li>
+<li>Read the red card: each problem names the sheet, the row and the bad value</li>
+<li>Fix those rows and upload again</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">A file with any error imports nothing, so a half-loaded college never reaches the solver. A valid file asks before it replaces the data.</p>
+</div>
+<img src="img/import-errors.png" alt="A red card: 3 problems in broken-import.xlsx, nothing was imported, with one line per problem row" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 9</p>
+<aside>The three errors: Rooms row 4 has type "hall"; Courses row 5 names a teacher "Sharma" who isn't in the Teachers sheet; Courses row 8 has "three" as lectures per week.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-10" aria-label="Slide 10"><div class="slide"><section id="f-generate" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ③ · Generate</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Generate with the exact solver</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Click <b>Generate timetable</b>; it runs for up to 20 s</li>
+<li>Read the card: the score and the points per rule</li>
+<li><b>Try longer: 40 s</b> if the best wasn’t proved in time</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">CP-SAT finds the best timetable or proves none exists. The browser then re-checks the result with its own validator and scores it again.</p>
+</div>
+<img src="img/step3-ready.png" alt="Step 3 Generate: Timetable ready, 0 clashes independently checked, score 18 split across five rule cards" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 10</p>
+<aside>If the solver server is offline, the button becomes Make a quick draft, which runs a heuristic in the browser. There is no silent fallback: the quick draft only runs from a button that says so.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-11" aria-label="Slide 11"><div class="slide"><section id="f-cantbuild" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ③ · Generate</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">When no timetable exists</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Upload <span style="color:#0B7A4B"><a href="testing-data/cannot-be-built.xlsx">cannot-be-built.xlsx</a></span> and Generate</li>
+<li>Read the causes, most likely first</li>
+<li>The fix button opens step ② filtered to that teacher</li>
+<li>Or <b>Make a partial timetable</b>: it places what fits and lists the rest</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">The solver proves it impossible, and the app names the cause with numbers: 42 periods a week, only 35 free.</p>
+</div>
+<img src="img/impossible-result.png" alt="Red card: This timetable can't be built. Dr. Anita Sharma teaches 42 periods a week; only 35 are free. Buttons: Move 7 periods to another teacher, Make a partial timetable" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 11</p>
+<aside>Causes come from the solver's diagnosis (classes with no slot, locks that can't hold) plus the section, teacher and room load checks from step 2, ranked by how far over they are. Nothing in the saved timetable changes.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-12" aria-label="Slide 12"><div class="slide"><section id="f-aims" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ③ · Generate</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Choose what to aim for</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Click <b>Aims</b> next to Generate</li>
+<li>Switch any of the five soft rules on or off</li>
+<li>The score updates at once; <b>Regenerate</b> to aim for the new set</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">Each switch is one soft rule written as an aim. Late finish starts off: on 2 CPU cores it makes the solver worse at the other four.</p>
+</div>
+<img src="img/step3-aims.png" alt="The Aims popover with five switches: spread each subject, at most 3 in a row, no free periods, keep batches busy, finish early" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 12</p>
+<aside>A rule that's switched off adds no points and the solver ignores it. The switches travel with the timetable when it's saved online.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-13" aria-label="Slide 13"><div class="slide"><section id="f-drag" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ④ · View &amp; export</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Drag a class to move it</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Pick a section, teacher or room</li>
+<li>Drag a class card</li>
+<li>Green slots are free and show the score change; red ones say why not</li>
+<li>Drop it: the class is locked in its new slot</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">Every slot is checked against the hard rules during the drag, and the validator checks the whole timetable again after the drop.</p>
+</div>
+<img src="img/step4-drag.png" alt="Dragging Discrete Mathematics: free slots shaded green with score changes like +2 and +10, a red slot saying CSE A already has Data Structures lab at Tue P6" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 13</p>
+<aside>The numbers on green slots are the score change if the class lands there, so a coordinator can see the cost of a move before making it.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-14" aria-label="Slide 14"><div class="slide"><section id="f-lock" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Step ④ · View &amp; export</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Lock, regenerate and print</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Click a class, then <b>Lock here</b></li>
+<li><b>Regenerate (keep 1 locked)</b> solves everything else again</li>
+<li><b>Print</b>: add a heading, then one timetable or all sections, one A4 page each</li>
+<li><b>CSV</b> downloads the whole timetable</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">Locks keep what’s agreed and re-solve the rest. If the locks make a timetable impossible, the solver says which ones.</p>
+</div>
+<img src="img/step4-print.png" alt="Step 4 with Operating Systems locked on Mon P3, the Regenerate keep 1 locked button, and the Print menu open with a heading field and This timetable or All sections" style="width:1000px;height:625px;object-fit:cover;border-radius:12px;border:1px solid #C9CBC3">
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 14</p>
+<aside>A locked class shows a lock icon and a thick border. Clear all locks removes them in one go.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-15" aria-label="Slide 15"><div class="slide"><section id="f-online" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Signed in · status line in the header</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Save online, keep versions, publish</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Sign in with Google or an email link; create an institute</li>
+<li>Open the status line → <b>Save online</b>. Each save adds a version</li>
+<li><b>Publish</b> gives a public link that opens without an account</li>
+<li><b>Versions…</b> opens an old version or makes it live</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">The database enforces the admin, editor and viewer roles. A save that would overwrite someone else’s asks first.</p>
+</div>
+<div style="width:1000px;height:625px;background:#ECECE6;border-radius:12px;border:1px solid #C9CBC3;padding:24px;display:flex;gap:24px;align-items:center;justify-content:center">
+<img src="img/online-menu.png" alt="The status line menu for CSE odd sem 2026: Save online, Save as new timetable, Publish again, Versions, Open from GNDEC Ludhiana, Rename, Work on this device only" style="width:360px;height:326px;object-fit:contain">
+<img src="img/online-versions.png" alt="The Versions dialog: the public link shows version 5, with Copy and Open, and six versions each with Make live or a Live badge" style="width:568px;height:490px;object-fit:contain">
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 15</p>
+<aside>Everything works signed out, saved in the browser; nothing goes online until someone clicks Save online. The last 20 versions are kept, plus the live one. These two shots come from the help pages, made against a test backend.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-16" aria-label="Slide 16"><div class="slide"><section id="f-assistant" data-transition="fade" style="background:#F6F6F2;color:#17181C;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">Signed in · Assistant button in the header</p>
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px">Ask the assistant</h2>
+</div>
+<div style="display:flex;gap:64px;align-items:start">
+<div style="width:600px;display:flex;flex-direction:column;gap:24px">
+<ol style="font-size:28px;line-height:1.4;color:#17181C;display:flex;flex-direction:column;gap:12px">
+<li>Click <b>Assistant</b> and enter a coupon</li>
+<li>Ask about the data or the app</li>
+<li>Ask for a change: it replies with a card</li>
+<li><b>Apply</b> makes the changes and regenerates; <b>Undo</b> brings back the working copy</li>
+</ol>
+<hr style="border-top:1px solid #C9CBC3">
+<p style="font-size:24px;font-weight:600;color:#0B7A4B;text-transform:uppercase;letter-spacing:2px">How it’s designed</p>
+<p style="font-size:26px;line-height:1.4;color:#4A4F57">Every card is dry-run in the browser against the hard rules before you see it. Teacher names leave the browser as codes.</p>
+</div>
+<div style="width:1000px;height:625px;background:#ECECE6;border-radius:12px;border:1px solid #C9CBC3;padding:24px;display:flex;gap:24px;align-items:center;justify-content:center">
+<img src="img/assistant-panel.png" alt="The assistant panel answering Where does the score of 18 come from, with the points per section" style="width:470px;height:452px;object-fit:contain">
+<img src="img/assistant-card.png" alt="A change card: move CSE A Data Structures from Mon P3 to Tue P1 and save online as version 7, with Apply and Discard" style="width:458px;height:303px;object-fit:contain">
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#6B7079">Lattice · 16</p>
+<aside>The assistant runs on Claude through a separate Lambda function. It can propose data edits, moves, locks, aims, regenerating and saving or publishing; deleting, members and roles stay manual. Coupons cap the number of questions per institute.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-17" aria-label="Slide 17"><div class="slide"><section id="links" data-transition="fade" style="background:#17181C;color:#F2F2EC;font-family:'DM Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<h2 style="font-size:64px;font-weight:700;line-height:1.1;letter-spacing:-1px;color:#F2F2EC">Links</h2>
+<table style="font-size:30px;color:#F2F2EC">
+<tr><th style="width:30%;text-align:left">What</th><th style="width:70%;text-align:left">Where</th></tr>
+<tr><td>Live app</td><td><a href="https://uselattice.app">uselattice.app</a></td></tr>
+<tr><td>Code</td><td><a href="https://github.com/ankur-paul/schedule-optimizer">github.com/ankur-paul/schedule-optimizer</a></td></tr>
+<tr><td>Testing data</td><td>The <a href="testing-data/README.md">testing-data</a> folder next to this deck, with a README</td></tr>
+<tr><td>Tutorial</td><td><a href="https://uselattice.app/help/start">uselattice.app/help/start</a>, five minutes on the sample</td></tr>
+<tr><td>Every feature</td><td>FEATURES.md, with each feature’s known limits</td></tr>
+<tr><td>Architecture</td><td>Slide 3; ARCHITECTURE.md and docs/deploy.md in the repo</td></tr>
+</table>
+<p style="font-size:30px;color:#B9BCC3">Ankur Paul</p>
+<aside>The help pages at /help explain every screen, every cause the solver can report and the common problems.</aside>
+</section>
+</div></div>
+<script>
+// Scale each 1920×1080 slide to its frame; arrow keys and PageUp/PageDown step through slides.
+const frames = [...document.querySelectorAll('.frame')];
+const fit = () => frames.forEach(f => { f.firstElementChild.style.transform = 'scale(' + f.clientWidth / 1920 + ')'; });
+addEventListener('resize', fit); fit();
+addEventListener('keydown', e => {
+  const step = { ArrowRight: 1, ArrowDown: 1, PageDown: 1, ' ': 1, ArrowLeft: -1, ArrowUp: -1, PageUp: -1 }[e.key];
+  if (!step) return;
+  e.preventDefault();
+  const now = frames.findIndex(f => f.getBoundingClientRect().bottom > 40);
+  frames[Math.max(0, Math.min(frames.length - 1, now + step))].scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+</script>
+</body>
+</html>
