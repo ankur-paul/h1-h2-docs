@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hackathon projects</title>
+<meta name="description" content="Ankur Paul's hackathon projects: Lattice and the Personalised Offer Engine. Decks, testing data and live links.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Public+Sans:wght@400;600&display=swap">
+<style>
+:root{--bg:#F7F5F0;--card:#FFFFFF;--ink:#1B2132;--muted:#4A5160;--line:#E2DED4;--accent:#C2410C;--link:#2B6CB0}
+@media (prefers-color-scheme: dark){:root{--bg:#15181F;--card:#1E222C;--ink:#F2F0EA;--muted:#B4BAC8;--line:#2E3340;--accent:#F2A541;--link:#7FB2F0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Public Sans',Arial,sans-serif;line-height:1.5}
+main{max-width:960px;margin:0 auto;padding:56px 16px 64px}
+h1,h2{font-family:'Space Grotesk',Arial,sans-serif;margin:0}
+h1{font-size:40px;line-height:1.1}
+.lede{color:var(--muted);font-size:18px;margin:12px 0 40px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:12px}
+.eyebrow{font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin:0}
+h2{font-size:28px}
+.what{color:var(--muted);margin:0 0 8px}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+li span{color:var(--muted);font-size:14px;display:block}
+a{color:var(--link);text-decoration:none;font-weight:600}
+a:hover{text-decoration:underline}
+footer{margin-top:40px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Hackathon projects</h1>
+<p class="lede">Ankur Paul · JPAL cohort. Each project has a deck, testing notes and a live app.</p>
+<div class="grid">
+<section class="card">
+<p class="eyebrow">Project 1</p>
+<h2>Lattice</h2>
+<p class="what">Clash-free weekly class timetables for a whole college.</p>
+<ul>
+<li><a href="lattice/">Presentation</a></li>
+<li><a href="lattice/testing-data/README.md">Testing data</a></li>
+<li><a href="lattice/timetable-architecture.pdf">Architecture (PDF)</a></li>
+<li><a href="https://uselattice.app">Live app</a><span>uselattice.app</span></li>
+<li><a href="https://github.com/ankur-paul/schedule-optimizer">Code</a></li>
+</ul>
+</section>
+<section class="card">
+<p class="eyebrow">Project 2</p>
+<h2>Personalised Offer Engine</h2>
+<p class="what">Decides which offer, if any, each customer should get, and when. Delivered on Telegram.</p>
+<ul>
+<li><a href="personalized-offer-engine/">Presentation</a></li>
+<li><a href="personalized-offer-engine/idea.html">Project introduction</a></li>
+<li><a href="personalized-offer-engine/Offer%20Engine%20Architecture.html">Architecture</a></li>
+<li><a href="personalized-offer-engine/testing-data/README.md">Testing data</a></li>
+<li><a href="https://offers.uselattice.app">Live engine view</a><span>offers.uselattice.app</span></li>
+<li><a href="https://offers-console.uselattice.app">Console</a><span>offers-console.uselattice.app</span></li>
+<li><a href="https://t.me/apkartbot">Telegram bot</a><span>@apkartbot</span></li>
+<li><a href="https://github.com/ankur-paul/personalized-offer-engine">Code</a></li>
+</ul>
+</section>
+</div>
+<footer>All data in both projects is synthetic.</footer>
+</main>
+</body>
+</html>
