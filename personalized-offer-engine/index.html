@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalised Offer Engine</title>
+<meta name="description" content="Personalised Offer Engine: decides which offer, if any, each customer should get, and when. What it is, how it's built, how to test it and its main features.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Public+Sans:wght@400;600;700&display=swap">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#2A2B30;padding:24px 16px}
+.frame{width:100%;max-width:1600px;aspect-ratio:16/9;margin:0 auto 24px;overflow:hidden;position:relative;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.35)}
+.slide{width:1920px;height:1080px;position:absolute;left:0;top:0;transform-origin:0 0}
+section{width:1920px;height:1080px;position:relative}
+h1,h2,h3,p,ul,ol,hr{margin:0}ul,ol{padding-left:1.25em}li{padding-left:.2em}aside{display:none}
+hr{border:none;width:100%}a{color:inherit;text-decoration:underline}
+table{border-collapse:collapse;width:100%}th,td{padding:.35em .6em;border-bottom:1px solid rgba(128,128,128,.4);vertical-align:top}th{font-weight:600}
+@media print{body{background:none;padding:0}.frame{max-width:none;border-radius:0;box-shadow:none;margin:0;break-after:page}}
+</style>
+</head>
+<body>
+<div class="frame" id="slide-1" aria-label="Slide 1"><div class="slide"><section id="cover" data-transition="fade" style="background:#1B2132;color:#F7F5F0;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:space-between">
+<div style="position:absolute;left:0;top:0;width:1920px;height:16px;background:linear-gradient(90deg, #E8590C 0%, #F2A541 50%, #4F8FD9 100%)"></div>
+<p style="font-size:30px;font-weight:600;color:#F2A541;letter-spacing:2px;text-transform:uppercase">JPAL cohort hackathon</p>
+<div style="display:flex;flex-direction:column;gap:40px">
+<h1 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:120px;font-weight:700;line-height:1.05;color:#F7F5F0">Personalised<br>Offer Engine</h1>
+<p style="font-size:44px;line-height:1.35;color:#C9CEDA;width:1300px">Decides which offer, if any, each customer of an online marketplace should get, and when. It sends offers over Telegram.</p>
+</div>
+<div style="display:flex;gap:64px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;color:#9AA3B5">Live engine view</p>
+<p style="font-size:30px;font-weight:600"><a href="https://offers.uselattice.app" style="color:#F7F5F0">offers.uselattice.app</a></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;color:#9AA3B5">Console</p>
+<p style="font-size:30px;font-weight:600"><a href="https://offers-console.uselattice.app" style="color:#F7F5F0">offers-console.uselattice.app</a></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;color:#9AA3B5">Telegram</p>
+<p style="font-size:30px;font-weight:600"><a href="https://t.me/apkartbot" style="color:#F7F5F0">@apkartbot</a></p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;color:#9AA3B5">Code</p>
+<p style="font-size:30px;font-weight:600"><a href="https://github.com/ankur-paul/personalized-offer-engine" style="color:#F7F5F0">github.com/ankur-paul</a></p>
+</div>
+</div>
+<aside>Personalised Offer Engine. A Claude agent picks one offer or no offer for each customer, inside rules set by the marketing team. All data is synthetic.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-2" aria-label="Slide 2"><div class="slide"><section id="idea" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">The idea</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1;color:#1B2132">A discount sent to someone who would buy anyway is lost margin</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:36px;border:1px solid #E2DED4;border-top:8px solid #2B6CB0;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Persuadable</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5160">Buys only with an offer.</p>
+<p style="font-size:26px;line-height:1.4;font-weight:600">Send the cheapest offer that works</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:36px;border:1px solid #E2DED4;border-top:8px solid #C2410C;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Sure Thing</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5160">Buys anyway.</p>
+<p style="font-size:26px;line-height:1.4;font-weight:600">No Offer</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:36px;border:1px solid #E2DED4;border-top:8px solid #8A93A6;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Lost Cause</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5160">Won’t buy either way.</p>
+<p style="font-size:26px;line-height:1.4;font-weight:600">A free ₹0 reminder at most</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px;background:#FFFFFF;padding:36px;border:1px solid #E2DED4;border-top:8px solid #1B2132;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Sleeping Dog</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5160">An offer makes them less likely to buy.</p>
+<p style="font-size:26px;line-height:1.4;font-weight:600">No Offer</p>
+</div>
+</div>
+<div style="display:flex;gap:48px;background:#1B2132;color:#F7F5F0;padding:40px 48px;border-radius:12px">
+<p style="font-size:30px;line-height:1.4;flex:1">So the engine aims at <b>Incremental Margin</b>: the margin an offer adds minus what it costs. It does not aim at likelihood to buy.</p>
+<p style="font-size:30px;line-height:1.4;flex:1;color:#C9CEDA">Each customer’s true type is hidden from the engine. It only sees an <b>estimated lift</b>, learned from past offers that were sent at random.</p>
+</div>
+<aside>The four groups are the Response Classes. They come from each synthetic customer's hidden buying-chance formula (Ground Truth). Only the simulator reads Ground Truth; the decision pipeline never does.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-3" aria-label="Slide 3"><div class="slide"><section id="built" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">How it is built</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Rules set the limits, Claude chooses inside them, code checks every choice</h2>
+</div>
+<div style="display:flex;gap:56px">
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="display:flex;gap:24px;padding:16px 0;border-bottom:1px solid #DDD8CC">
+<p style="font-size:28px;font-weight:700;width:260px;color:#2B6CB0">Trigger</p>
+<p style="font-size:28px;line-height:1.35;flex:1;color:#4A5160">Abandoned cart, points expiring, long gap, first delivery, the Daily Sweep or <b>/offers</b></p>
+</div>
+<div style="display:flex;gap:24px;padding:16px 0;border-bottom:1px solid #DDD8CC">
+<p style="font-size:28px;font-weight:700;width:260px;color:#2B6CB0">Rules</p>
+<p style="font-size:28px;line-height:1.35;flex:1;color:#4A5160">Opt-out, Holdout, caps, budget and margin floor give the <b>Eligible Set</b> of offers</p>
+</div>
+<div style="display:flex;gap:24px;padding:16px 0;border-bottom:1px solid #DDD8CC">
+<p style="font-size:28px;font-weight:700;width:260px;color:#2B6CB0">Valuation</p>
+<p style="font-size:28px;line-height:1.35;flex:1;color:#4A5160">Estimated lift × margin − expected cost, per option</p>
+</div>
+<div style="display:flex;gap:24px;padding:16px 0;border-bottom:1px solid #DDD8CC">
+<p style="font-size:28px;font-weight:700;width:260px;color:#2B6CB0">Agent</p>
+<p style="font-size:28px;line-height:1.35;flex:1;color:#4A5160">Claude picks one option or No Offer, sets its terms and writes the caption</p>
+</div>
+<div style="display:flex;gap:24px;padding:16px 0;border-bottom:1px solid #DDD8CC">
+<p style="font-size:28px;font-weight:700;width:260px;color:#2B6CB0">Validation</p>
+<p style="font-size:28px;line-height:1.35;flex:1;color:#4A5160">Re-checks every Rule and the caption. On failure the rule-based <b>Fallback</b> decides</p>
+</div>
+<div style="display:flex;gap:24px;padding:16px 0">
+<p style="font-size:28px;font-weight:700;width:260px;color:#2B6CB0">Offer</p>
+<p style="font-size:28px;line-height:1.35;flex:1;color:#4A5160">Code draws the Offer Card from the validated terms; the Offer Bot sends it on Telegram</p>
+</div>
+</div>
+<div style="width:560px;display:flex;flex-direction:column;gap:18px;background:#1B2132;color:#F7F5F0;padding:40px;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:32px;font-weight:700;color:#F2A541">Stack</h3>
+<p style="font-size:26px;line-height:1.35">Python 3.12, SQLite</p>
+<p style="font-size:26px;line-height:1.35">Claude Opus 5.5 decides; Haiku 5.5 plays the customers</p>
+<p style="font-size:26px;line-height:1.35">Telegram bots (polling)</p>
+<p style="font-size:26px;line-height:1.35">FastAPI live view, Streamlit console</p>
+<p style="font-size:26px;line-height:1.35">Synthetic world: 10,000 customers, 12 months of history</p>
+<p style="font-size:26px;line-height:1.35">Docker on AWS Lightsail, Cloudflare Tunnel</p>
+<p style="font-size:26px;line-height:1.35">985 tests</p>
+</div>
+</div>
+<aside>The agent decides only for chat-attached customers (the Customer Bots and people testing on Telegram). The rule-based chooser decides for the other ~10,000, and is also the Fallback. Five ADRs in docs/adr record the settled design choices.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-4" aria-label="Slide 4"><div class="slide"><section id="surfaces" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">What it looks like</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Three surfaces on one shared world</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:32px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<img src="img/live-view.png" alt="Live engine view: scenario rail, counters, the Decision pipeline and an Offer stage card" style="width:533px;height:333px;object-fit:cover;border-radius:12px;border:1px solid #DDD8CC">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Live engine view</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5160">Watch one Decision move through the pipeline, stage by stage, with what each stage saw and why.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<img src="img/console-rules.png" alt="Console Rules page: discount, frequency and budget limits as fill-in sentences" style="width:533px;height:333px;object-fit:cover;border-radius:12px;border:1px solid #DDD8CC">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Console</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5160">For the marketing team: move the Simulation Clock, read the Decision log, edit Rules, see Results.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<img src="img/telegram-card.png" alt="Telegram: an Offer Card for 6% off Fashion with its caption, then Claimed! Your code is POE-W3RS4L" style="width:533px;height:333px;object-fit:cover;border-radius:12px;border:1px solid #DDD8CC">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Telegram</h3>
+<p style="font-size:26px;line-height:1.4;color:#4A5160">The Offer Bot sends Offer Cards. Customer Bots and people testing reply with Claim, Not now or Stop.</p>
+</div>
+</div>
+<aside>All three read and write the same SQLite database. The live view and the console are web pages; the bots poll Telegram.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-5" aria-label="Slide 5"><div class="slide"><section id="test" data-transition="fade" style="background:#EDEAE2;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">How to test it</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">Three ways in. No setup and no dataset to upload</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px">
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;padding:40px;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Live engine view</h3>
+<p style="font-size:24px;color:#2B6CB0;font-weight:600">offers.uselattice.app</p>
+<ol style="font-size:26px;line-height:1.45;color:#4A5160">
+<li>Press <b>Reset</b> to load the demo world.</li>
+<li>Click a scenario in the left rail.</li>
+<li>Watch each stage light up; click a stage to see what it saw and why.</li>
+</ol>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;padding:40px;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Telegram</h3>
+<p style="font-size:24px;color:#2B6CB0;font-weight:600">@apkartbot</p>
+<ol style="font-size:26px;line-height:1.45;color:#4A5160">
+<li>Send <b>/start</b> and pick a customer to play.</li>
+<li>Send <b>/offers</b>. Cards go out between 09:00 and 21:00 simulated time.</li>
+<li>Tap <b>Claim</b>, <b>Not now</b> or <b>Stop</b>.</li>
+</ol>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px;background:#FFFFFF;padding:40px;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Console</h3>
+<p style="font-size:24px;color:#2B6CB0;font-weight:600">offers-console.uselattice.app</p>
+<ol style="font-size:26px;line-height:1.45;color:#4A5160">
+<li><b>Simulation Clock</b>: +1 hour or +1 day.</li>
+<li><b>Decision log</b>: every Decision and why.</li>
+<li><b>Rules</b>: change a limit, preview its impact, save.</li>
+</ol>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#4A5160">Everyone shares one world. If a scenario shows FAIL, press Reset. All data is synthetic and already loaded.</p>
+<aside>If /offers sends nothing, the simulated clock is outside 09:00 to 21:00. Advance it on the console's Simulation Clock page and the card arrives within about 5 seconds. Reset also clears Telegram players' copies; send /start again after a reset.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-6" aria-label="Slide 6"><div class="slide"><section id="f-nooffer" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Saving margin</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">A Sure Thing gets No Offer</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">This customer has a 48% chance of buying with no offer. Every option has a negative estimated lift, so Claude sends nothing and gives its reason.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Live engine view › Saving margin</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Click “A Sure Thing gets No Offer”.</li>
+<li>Click the <b>Agent</b> stage for Claude’s reason.</li>
+<li>Scroll to the blue panel: what the simulator knew.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/sure-thing-agent.png" alt="Agent stage: claude-opus-5-5 chose No Offer, with its reason" style="width:936px;height:368px;object-fit:contain">
+<img src="img/sure-thing-simulator.png" alt="Hidden simulator panel: Sure Thing, 48.2% chance with no offer, true lift under 1% for every option" style="width:936px;height:368px;object-fit:contain">
+</div>
+<aside>The blue "hidden from the engine" panel is the simulator's Ground Truth. The engine never reads it; the live view shows it only so you can check the engine's call.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-7" aria-label="Slide 7"><div class="slide"><section id="f-valuation" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Saving margin</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">A discount goes only where it adds margin</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">Each option is worth estimated lift × margin − chance of redemption × cost. Here 7% off fashion is worth ₹10; 5% off electronics would lose ₹26.6.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Live engine view › Saving margin</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Click “A Customer a discount moves gets one”.</li>
+<li>Click the <b>Valuation</b> stage.</li>
+<li>Compare with “A Lost Cause gets a ₹0 Nudge”.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/valuation.png" alt="Valuation stage: value per option as bars; 7% off fashion is best at ₹10, electronics negative" style="width:936px;height:760px;object-fit:contain">
+</div>
+<aside>Estimated lift is learned from past offers in the synthetic history that were sent at random, like A/B tests. Version 1 averages them per customer segment.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-8" aria-label="Slide 8"><div class="slide"><section id="f-limits" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Hard limits</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">Some customers never reach Claude</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">Opt-out is absolute. The 10% Holdout never gets offers, so lift can be measured. Three “Not now”s in 14 days pause offers for 14 days.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Live engine view › Hard limits</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Click “Three Not nows pause Offers”.</li>
+<li>Open <b>Checks</b>: the Fatigue Pause stopped it.</li>
+<li>Try the Holdout and Opt-out scenarios too.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/fatigue-pause-checks.png" alt="Checks stage: stopped by the Fatigue Pause, paused until 11 Dec; opt-out and Holdout passed" style="width:936px;height:760px;object-fit:contain">
+</div>
+<aside>The Checks run before the Eligible Set is built, so the agent is never asked about these customers. Each Decision records its Binding Rule.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-9" aria-label="Slide 9"><div class="slide"><section id="f-validation" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Safety net</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">Validation catches a rule-breaking answer</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">The scenario swaps Claude’s answer for 40% off. The margin floor allows 25%, so Validation rejects it and the rule-based Fallback decides.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Live engine view › Safety net</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Click “Validation rejects a rule-breaking proposal”.</li>
+<li>Click <b>Validation</b>: one check failed.</li>
+<li>Click <b>Fallback</b> for what went out instead.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/validation-failed.png" alt="Validation stage failed: pct=40 is over 25 (margin floor); other checks passed" style="width:936px;height:760px;object-fit:contain">
+</div>
+<aside>A property test sends random rule-breaking proposals through Validation; none pass.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-10" aria-label="Slide 10"><div class="slide"><section id="f-caption" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Safety net</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">The Caption Check blocks invented urgency</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">Claude writes only the caption; code draws the terms on the card. A caption with a wrong number, a made-up deadline or pressure words never goes out.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Live engine view › Safety net</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Click “The Caption Check blocks invented urgency”.</li>
+<li><b>Agent</b> shows the bad caption.</li>
+<li><b>Validation</b> shows the three reasons it failed.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/caption-agent.png" alt="Agent stage with the swapped caption: Hurry, 30% off tonight only!" style="width:936px;height:368px;object-fit:contain">
+<img src="img/caption-check-failed.png" alt="Validation failed on the Caption Check: number mismatch 30%, deadline mismatch tonight, invented urgency hurry" style="width:936px;height:368px;object-fit:contain">
+</div>
+<aside>The scenario swaps in the caption "Hurry, 30% off tonight only!". The Caption Check is tested on 65 bad and 20 good captions.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-11" aria-label="Slide 11"><div class="slide"><section id="f-rules" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Marketer controls</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">A Rule change flips the next Decision</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">Rules read as sentences. Each save is a new version; offers already sent keep theirs. Here bronze goes from 15% to 5% max, and the same customer’s offer drops from 7% to 5%.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Console › Rules · Live view › Marketer controls</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Console › Rules: change a limit.</li>
+<li>Press <b>Preview impact</b>, then <b>Save</b>.</li>
+<li>Or run “A Rule change flips a Decision” (about 60 s).</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/console-rules.png" alt="Console Rules page with discount limits as fill-in sentences" style="width:936px;height:300px;object-fit:cover">
+<img src="img/rule-change.png" alt="Offer stage after the Rule change: 5% off fashion up to ₹70, with the before, preview, save and revert steps" style="width:936px;height:436px;object-fit:contain">
+</div>
+<aside>Preview impact replays the next Daily Sweep under the edited Rules and shows the change in offers and cost before you save. The scenario reverts its change afterwards.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-12" aria-label="Slide 12"><div class="slide"><section id="f-withdraw" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Marketer controls</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">One click pulls every outstanding offer</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">If an offer goes out wrong, the emergency withdraw cancels every queued, sent or claimed offer. The frequency cap still stops a third offer.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Console › Rules › Emergency withdraw</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>In the live view, click “Emergency withdraw pulls outstanding Offers”.</li>
+<li>Open the <b>Offer</b> stage: both offers withdrawn.</li>
+<li>Press <b>Reset</b> afterwards to bring them back.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/withdraw.png" alt="No Offer, stopped by the frequency cap; the scenario queued two offers and withdrew both" style="width:936px;height:760px;object-fit:contain">
+</div>
+<aside>The withdraw scenario runs the real withdraw, so it pulls every outstanding live offer in the shared world. Reset restores them.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-13" aria-label="Slide 13"><div class="slide"><section id="f-telegram" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Delivery</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">Play a customer on Telegram</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">Pick a customer and you get your own copy of them. The engine decides for you like anyone else, and the Offer Bot sends the Offer Card.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Telegram › @apkartbot</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Send <b>/start</b>, tap a customer.</li>
+<li>Send <b>/offers</b>. If nothing comes, advance the clock to 09:00.</li>
+<li>Tap <b>Claim</b>: you get the code, and maybe a simulated order.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;justify-content:center;align-items:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/telegram-flow.png" alt="Telegram chat with AP Kart: /start, the welcome, Rekha Iyer’s persona card, a 6% off Fashion Offer Card, and Claimed! Your code is POE-W3RS4L" style="width:936px;height:760px;object-fit:contain">
+</div>
+<aside>A Tester who claims buys with the Offer's Ground Truth chance, adjusted for having claimed. Not now three times in 14 days starts a Fatigue Pause; Stop opts out until /start.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-14" aria-label="Slide 14"><div class="slide"><section id="f-bots" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Simulated customers</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">Customer Bots reply in character</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">Seven Telegram bots each play one customer from a persona card. Ground Truth sets the buying chance; Claude may move it by up to ±30% for message fit; a coin flip decides.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Live view › any scenario › What the Customer did</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Click “A Lost Cause gets a ₹0 Nudge”.</li>
+<li>Scroll below the stages: the card, the chance, the flip and the bot’s reply.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/customer-bot-reply.png" alt="What the Customer did: Have a look Offer Card, chance 5.3% raised to 6.7% for message fit, doesn't buy, Customer Bot reply and Not now" style="width:936px;height:760px;object-fit:contain">
+</div>
+<aside>The ±30% cap keeps the role-play from overruling Ground Truth, so outcomes stay measurable (ADR 0004). Customer Bots use Claude Haiku 5.5.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-15" aria-label="Slide 15"><div class="slide"><section id="f-clock" data-transition="fade" style="background:#F7F5F0;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;gap:64px">
+<div style="width:600px;display:flex;flex-direction:column;gap:32px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Simulated world</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:56px;font-weight:700;line-height:1.1">10,000 customers run on a Simulation Clock</h2>
+<p style="font-size:28px;line-height:1.4;color:#4A5160">Each simulated hour, every customer visits, carts, orders and earns points; Triggers fire and sent offers resolve. The Daily Sweep decides for everyone at 10:00. A day takes about 15 s.</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Where</p>
+<p style="font-size:26px;line-height:1.4">Console › Simulation Clock · Live view › The world so far</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-size:24px;font-weight:700;color:#2B6CB0;text-transform:uppercase;letter-spacing:1px">Try it</p>
+<ol style="font-size:26px;line-height:1.45">
+<li>Console: press <b>+1 day</b>.</li>
+<li>Live view: counters and charts update as it runs.</li>
+</ol>
+</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px;justify-content:center;background:#E4E0D6;border-radius:16px;padding:32px">
+<img src="img/console-clock.png" alt="Console Simulation Clock page with +1 hour, +1 day and Auto mode" style="width:936px;height:268px;object-fit:contain">
+<img src="img/world-charts.png" alt="Live view world charts after one simulated day: 10.2K Decisions, 1,286 offers sent, 76 claimed, 11 redeemed" style="width:936px;height:452px;object-fit:contain">
+</div>
+<aside>Every Rule, event and expiry uses simulated time, never the wall clock (ADR 0003). Wall-clock time is used only for Telegram delivery. The world starts at 1 Dec 2026, after 12 months of generated history.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-16" aria-label="Slide 16"><div class="slide"><section id="results" data-transition="fade" style="background:#1B2132;color:#F7F5F0;font-family:'Public Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#F2A541;letter-spacing:2px;text-transform:uppercase">Results</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1;color:#F7F5F0">A blanket discount loses money; targeting earns ₹23–29 per ₹ spent</h2>
+</div>
+<div style="display:flex;gap:64px">
+<table style="width:900px;font-size:30px;color:#F7F5F0">
+<tr><th style="width:60%;text-align:left">Policy, 28 simulated days</th><th style="width:40%;text-align:right">Incremental Margin per ₹</th></tr>
+<tr><td>No Offers (baseline)</td><td style="text-align:right">0</td></tr>
+<tr><td>Blanket 20% off</td><td style="text-align:right">−0.08</td></tr>
+<tr><td>Rules Only</td><td style="text-align:right">+28.93</td></tr>
+<tr><td>Rules + Claude agent</td><td style="text-align:right">+22.60</td></tr>
+</table>
+<div style="flex:1;display:flex;flex-direction:column;gap:24px">
+<p style="font-size:28px;line-height:1.45;color:#C9CEDA">Measured by <b style="color:#F7F5F0">offer-engine simulate</b> on a 500-customer sample of the 10k world, each Policy on its own copy from the same start and seed.</p>
+<p style="font-size:28px;line-height:1.45;color:#C9CEDA">The agent scored below the rules chooser: +₹13,052 against +₹20,887. Part of the gap may be noise; it is one seed and one month.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#9AA3B5">Incremental Margin = margin from orders the offer caused − offer cost, against No Offers. Full run: about 100 minutes.</p>
+<aside>Rules Only's per-rupee figure is high partly because many of its offers are ₹0 Nudges, which add margin at no spend. Blanket 20% ignores most Rules by design. The console's Results page shows the live funnel against the Holdout and spend wasted on Sure Things.</aside>
+</section>
+</div></div>
+<div class="frame" id="slide-17" aria-label="Slide 17"><div class="slide"><section id="links" data-transition="fade" style="background:#EDEAE2;color:#1B2132;font-family:'Public Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:24px;font-weight:600;color:#C2410C;letter-spacing:2px;text-transform:uppercase">Limits and links</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1">What to know before you test</h2>
+</div>
+<div style="display:flex;gap:48px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;padding:40px;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Known limits</h3>
+<ul style="font-size:26px;line-height:1.45;color:#4A5160">
+<li>One shared world with no password: anyone can change Rules or press Reset.</li>
+<li>Claude decides only for the 7 Customer Bots and Telegram testers; the rules chooser decides for the rest.</li>
+<li>A Customer Bot reply takes about 10 s.</li>
+<li>Results are from one seed and one simulated month.</li>
+</ul>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;padding:40px;border-radius:12px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:36px;font-weight:700">Links</h3>
+<p style="font-size:26px;line-height:1.4"><a href="https://github.com/ankur-paul/personalized-offer-engine" style="color:#2B6CB0">github.com/ankur-paul/personalized-offer-engine</a></p>
+<p style="font-size:26px;line-height:1.4;color:#4A5160"><b style="color:#1B2132">README.md</b>: quick start and how it decides</p>
+<p style="font-size:26px;line-height:1.4;color:#4A5160"><b style="color:#1B2132">FEATURES.md</b>: every feature and its known limits</p>
+<p style="font-size:26px;line-height:1.4;color:#4A5160"><b style="color:#1B2132">docs/adr/</b>: the five settled design decisions</p>
+<p style="font-size:26px;line-height:1.4;color:#4A5160"><b style="color:#1B2132">docs/PLAN.md</b>: the full design</p>
+<p style="font-size:26px;line-height:1.4;color:#4A5160"><b style="color:#1B2132">docs/DEPLOY.md</b>: how it is hosted</p>
+</div>
+</div>
+<aside>All data is synthetic, generated by offer-engine generate --customers 10000 --seed 7. Secrets live in .env and are never committed.</aside>
+</section>
+</div></div>
+<script>
+// Scale each 1920×1080 slide to its frame; arrow keys and PageUp/PageDown step through slides.
+const frames = [...document.querySelectorAll('.frame')];
+const fit = () => frames.forEach(f => { f.firstElementChild.style.transform = 'scale(' + f.clientWidth / 1920 + ')'; });
+addEventListener('resize', fit); fit();
+addEventListener('keydown', e => {
+  const step = { ArrowRight: 1, ArrowDown: 1, PageDown: 1, ' ': 1, ArrowLeft: -1, ArrowUp: -1, PageUp: -1 }[e.key];
+  if (!step) return;
+  e.preventDefault();
+  const now = frames.findIndex(f => f.getBoundingClientRect().bottom > 40);
+  frames[Math.max(0, Math.min(frames.length - 1, now + step))].scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+</script>
+</body>
+</html>
