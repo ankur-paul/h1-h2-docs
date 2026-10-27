@@ -1,0 +1,281 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Offer Engine Architecture</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one wide diagram, two-zone split by the Ground Truth boundary; notes below in a two-column grid. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #1b2230;
+  --muted: #5a6373;
+  --line: #c8ced8;
+  --engine: #2b56c9;
+  --engine-tint: #edf1fb;
+  --world: #9a6200;
+  --world-tint: #fbf4e4;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12151b; --surface: #1a1f28; --ink: #e5e8ee; --muted: #9ba4b3; --line: #3a4252;
+    --engine: #86a5f3; --engine-tint: #1b2438; --world: #e3b45e; --world-tint: #282217;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12151b; --surface: #1a1f28; --ink: #e5e8ee; --muted: #9ba4b3; --line: #3a4252;
+  --engine: #86a5f3; --engine-tint: #1b2438; --world: #e3b45e; --world-tint: #282217;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+main {
+  max-width: 1140px; margin: 0 auto;
+  padding-block: 40px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 28px;
+}
+header { display: grid; gap: 8px; max-width: 68ch; }
+h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { margin: 0 0 14px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+p { margin: 0; }
+.lede { color: var(--muted); }
+code { font-family: var(--mono); font-size: 0.88em; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 22px; height: 14px; border-radius: 3px; border: 1.5px solid; flex: none; }
+.sw.world { border-color: var(--world); background: var(--world-tint); }
+.sw.engine { border-color: var(--engine); background: var(--engine-tint); }
+.sw.ext { border-color: var(--muted); border-style: dashed; background: var(--surface); }
+.sw.boundary { border: none; height: 0; border-top: 2px dashed var(--world); border-radius: 0; }
+
+.figure { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow-x: auto; }
+.figure svg { display: block; width: 100%; min-width: 880px; height: auto; }
+
+svg text { font-family: var(--sans); }
+.t { font-size: 14px; font-weight: 600; fill: var(--ink); }
+.b { font-size: 12px; fill: var(--muted); }
+.n { font-size: 12px; font-weight: 600; fill: var(--engine); font-family: var(--mono); }
+.zone { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; }
+.zone.w { fill: var(--world); }
+.zone.e { fill: var(--engine); }
+.lbl { font-size: 11px; fill: var(--muted); paint-order: stroke; stroke: var(--surface); stroke-width: 5px; stroke-linejoin: round; }
+.lbl.e { fill: var(--engine); }
+.box { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.box.e { fill: var(--engine-tint); stroke: var(--engine); }
+.box.w { fill: var(--world-tint); stroke: var(--world); }
+.box.x { stroke: var(--muted); stroke-dasharray: 5 4; }
+.wire { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.wire.e { stroke: var(--engine); }
+.ah { fill: var(--muted); }
+.ah.e { fill: var(--engine); }
+.boundary { stroke: var(--world); stroke-width: 2; stroke-dasharray: 7 6; }
+.pill { fill: var(--surface); stroke: var(--world); stroke-width: 1.5; }
+.pilltext { font-size: 11px; font-weight: 600; fill: var(--world); }
+.tint { fill: var(--world-tint); opacity: 0.55; }
+
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 28px 40px; }
+dl { margin: 0; display: grid; gap: 14px; }
+dt { font-weight: 600; display: flex; gap: 10px; align-items: baseline; }
+dt .adr { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--engine); }
+dd { margin: 2px 0 0; color: var(--muted); max-width: 62ch; }
+.side { display: grid; gap: 22px; align-content: start; }
+.side p { color: var(--muted); max-width: 62ch; }
+.side p strong { color: var(--ink); font-weight: 600; }
+</style>
+
+<main>
+  <header>
+    <h1>Personalised Offer Engine</h1>
+    <p class="lede">How a simulated Customer's behaviour becomes an Offer on Telegram, and why the engine never sees the answer key.</p>
+  </header>
+
+  <div class="legend" aria-label="Legend">
+    <span><i class="sw world"></i>Simulated world (reads Ground Truth)</span>
+    <span><i class="sw engine"></i>Offer engine (never reads Ground Truth)</span>
+    <span><i class="sw ext"></i>Outside service or people</span>
+    <span><i class="sw boundary"></i>Ground Truth boundary</span>
+  </div>
+
+  <div class="figure">
+    <svg viewBox="0 0 1100 744" role="img" aria-labelledby="dtitle">
+      <title id="dtitle">Architecture: the simulated world produces events, the Offer engine runs Trigger, Rules, Chooser and Validation, the Offer Bot delivers through Telegram to Customer Bots and Testers, and all processes share one SQLite database.</title>
+      <defs>
+        <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+        <marker id="ae" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah e" d="M0,0 L10,5 L0,10 z"/></marker>
+      </defs>
+
+      <!-- simulated-world tint -->
+      <rect class="tint" x="16" y="144" width="364" height="590" rx="10"/>
+
+      <!-- top: surfaces -->
+      <rect class="box" x="40" y="30" width="280" height="72" rx="8"/>
+      <text class="t" x="60" y="60">Marketing console</text>
+      <text class="b" x="60" y="82">Streamlit :8501 · Rules, clock, results</text>
+
+      <rect class="box" x="780" y="30" width="280" height="72" rx="8"/>
+      <text class="t" x="800" y="60">Live engine view</text>
+      <text class="b" x="800" y="82">FastAPI + SSE :8502 · each Decision live</text>
+
+      <!-- boundary -->
+      <line class="boundary" x1="380" y1="140" x2="380" y2="734"/>
+      <rect class="pill" x="306" y="116" width="148" height="26" rx="13"/>
+      <text class="pilltext" x="380" y="133" text-anchor="middle">Ground Truth boundary</text>
+
+      <text class="zone w" x="40" y="166">SIMULATED WORLD</text>
+      <text class="zone e" x="420" y="166">OFFER ENGINE</text>
+
+      <!-- console wires -->
+      <path class="wire" d="M200,102 V176" marker-end="url(#a)"/>
+      <text class="lbl" x="210" y="134">advance clock</text>
+      <path class="wire" d="M320,66 H658 V176" marker-end="url(#a)"/>
+      <text class="lbl" x="490" y="58" text-anchor="middle">edit Rules (versioned)</text>
+
+      <!-- simulator -->
+      <rect class="box w" x="40" y="178" width="300" height="100" rx="8"/>
+      <text class="t" x="60" y="206">Simulator + Simulation Clock</text>
+      <text class="b" x="60" y="228">Steps simulated time hour by hour.</text>
+      <text class="b" x="60" y="246">~10k Customers browse, cart and order.</text>
+      <text class="b" x="60" y="264">Settles outcomes from Ground Truth.</text>
+
+      <path class="wire e" d="M340,228 H418" marker-end="url(#ae)"/>
+      <text class="lbl e" x="380" y="220" text-anchor="middle">events</text>
+
+      <!-- pipeline -->
+      <rect class="box e" x="420" y="178" width="148" height="100" rx="8"/>
+      <text class="n" x="436" y="206">1</text><text class="t" x="452" y="206">Trigger</text>
+      <text class="b" x="436" y="228">Cart abandoned,</text>
+      <text class="b" x="436" y="246">points expiring,</text>
+      <text class="b" x="436" y="264">Daily Sweep, /offers</text>
+
+      <path class="wire e" d="M568,228 H582" marker-end="url(#ae)"/>
+      <rect class="box e" x="584" y="178" width="148" height="100" rx="8"/>
+      <text class="n" x="600" y="206">2</text><text class="t" x="616" y="206">Rules</text>
+      <text class="b" x="600" y="228">Work out the</text>
+      <text class="b" x="600" y="246">Eligible Set;</text>
+      <text class="b" x="600" y="264">strictest Rule wins</text>
+
+      <path class="wire e" d="M732,228 H746" marker-end="url(#ae)"/>
+      <rect class="box e" x="748" y="178" width="148" height="100" rx="8"/>
+      <text class="n" x="764" y="206">3</text><text class="t" x="780" y="206">Chooser</text>
+      <text class="b" x="764" y="228">Claude agent picks</text>
+      <text class="b" x="764" y="246">an Offer or No Offer</text>
+      <text class="b" x="764" y="264">and the caption</text>
+
+      <path class="wire e" d="M896,228 H910" marker-end="url(#ae)"/>
+      <rect class="box e" x="912" y="178" width="148" height="100" rx="8"/>
+      <text class="n" x="928" y="206">4</text><text class="t" x="944" y="206">Validation</text>
+      <text class="b" x="928" y="228">Re-checks every Rule</text>
+      <text class="b" x="928" y="246">and the caption.</text>
+      <text class="b" x="928" y="264">Fails → Fallback</text>
+
+      <!-- traces up to live view -->
+      <path class="wire" d="M986,178 V104" marker-end="url(#a)"/>
+      <text class="lbl" x="976" y="134" text-anchor="end">Decision traces</text>
+
+      <!-- Claude API -->
+      <path class="wire" d="M822,280 V316" marker-start="url(#a)" marker-end="url(#a)"/>
+      <rect class="box x" x="752" y="318" width="140" height="44" rx="8"/>
+      <text class="t" x="822" y="345" text-anchor="middle">Claude API</text>
+
+      <!-- rules chooser note -->
+      <text class="b" x="420" y="304">Customers with no chat: the rules chooser decides.</text>
+      <text class="b" x="420" y="322">It is also the Fallback.</text>
+
+      <!-- validation to offer bot -->
+      <path class="wire e" d="M986,278 V402" marker-end="url(#ae)"/>
+      <text class="lbl e" x="996" y="346">valid Offer</text>
+
+      <!-- delivery row -->
+      <rect class="box w" x="40" y="404" width="300" height="96" rx="8"/>
+      <text class="t" x="60" y="432">Customer Bot simulator</text>
+      <text class="b" x="60" y="454">Bots play the showcase Customers.</text>
+      <text class="b" x="60" y="472">Ground Truth sets the chance to buy;</text>
+      <text class="b" x="60" y="490">Claude nudges it by up to ±30%.</text>
+
+      <path class="wire" d="M342,452 H448" marker-start="url(#a)" marker-end="url(#a)"/>
+      <text class="lbl" x="395" y="444" text-anchor="middle">Offer Cards</text>
+      <text class="lbl" x="395" y="470" text-anchor="middle">Claims, replies</text>
+
+      <rect class="box x" x="450" y="404" width="240" height="96" rx="8"/>
+      <text class="t" x="470" y="432">Telegram</text>
+      <text class="b" x="470" y="454">Bot API, with bot-to-bot</text>
+      <text class="b" x="470" y="472">messages between the</text>
+      <text class="b" x="470" y="490">Offer Bot and Customer Bots</text>
+
+      <path class="wire" d="M692,452 H788" marker-start="url(#a)" marker-end="url(#a)"/>
+      <text class="lbl" x="740" y="444" text-anchor="middle">Offer Cards</text>
+      <text class="lbl" x="740" y="470" text-anchor="middle">Claims</text>
+
+      <rect class="box e" x="790" y="404" width="270" height="96" rx="8"/>
+      <text class="t" x="810" y="432">Offer Bot</text>
+      <text class="b" x="810" y="454">Sends the Offer Card: code draws</text>
+      <text class="b" x="810" y="472">the terms, the agent the caption.</text>
+      <text class="b" x="810" y="490">Takes Claim, Not now and Stop.</text>
+
+      <path class="wire" d="M570,502 V542" marker-start="url(#a)" marker-end="url(#a)"/>
+      <rect class="box x" x="470" y="544" width="200" height="60" rx="8"/>
+      <text class="t" x="570" y="570" text-anchor="middle">Testers</text>
+      <text class="b" x="570" y="590" text-anchor="middle">people playing a Customer</text>
+
+      <!-- database -->
+      <rect class="box" x="40" y="640" width="1020" height="84" rx="8"/>
+      <path class="box w" d="M48,640 H380 V724 H48 a8,8 0 0 1 -8,-8 V648 a8,8 0 0 1 8,-8 z"/>
+      <line class="boundary" x1="380" y1="640" x2="380" y2="724"/>
+      <text class="t" x="60" y="672">sim_* tables</text>
+      <text class="b" x="60" y="694">Ground Truth, hidden traits,</text>
+      <text class="b" x="60" y="712">Customer Bot fates</text>
+      <text class="t" x="420" y="672">SQLite, shared by all four processes</text>
+      <text class="b" x="420" y="694">Customers and events · Rule versions · Decisions and traces · Offers · outbox</text>
+    </svg>
+  </div>
+
+  <section class="notes">
+    <div>
+      <h2>Five decisions hold it together</h2>
+      <dl>
+        <div>
+          <dt><span class="adr">ADR 0001</span>Rules before the agent</dt>
+          <dd>Rules work out the Eligible Set. The agent picks one Offer or No Offer from it. Validation re-checks every Rule, and a rule-based Fallback runs on failure.</dd>
+        </div>
+        <div>
+          <dt><span class="adr">ADR 0002</span>Hidden Ground Truth</dt>
+          <dd>Each Customer's real buying chance per Offer Type lives in the <code>sim_*</code> tables. Only the simulated world reads it. The engine learns Estimated Lift from past random Offers instead.</dd>
+        </div>
+        <div>
+          <dt><span class="adr">ADR 0003</span>Simulation Clock</dt>
+          <dd>Rules, events and expiries all run on simulated time, advanced from the console. Only Telegram delivery uses the wall clock.</dd>
+        </div>
+        <div>
+          <dt><span class="adr">ADR 0004</span>Bounded Customer Bots</dt>
+          <dd>Ground Truth sets the base chance of buying. Claude nudges it by at most ±30% for how well the message fits, and a weighted coin flip decides.</dd>
+        </div>
+        <div>
+          <dt><span class="adr">ADR 0005</span>Offer Card terms from code</dt>
+          <dd>Code draws the amount, minimum basket, category and expiry from the validated Offer. The agent writes only the caption.</dd>
+        </div>
+      </dl>
+    </div>
+    <div class="side">
+      <div>
+        <h2>The goal</h2>
+        <p>A discount sent to someone who would have bought anyway is lost margin. So the engine aims at <strong>Incremental Margin</strong>, picks the cheapest Offer that captures the Lift, and is happy to send <strong>No Offer</strong>.</p>
+      </div>
+      <div>
+        <h2>Who decides</h2>
+        <p>The <strong>Claude agent</strong> decides for chat-attached Customers: the Customer Bots and the Testers' copies. The <strong>rules chooser</strong> decides for everyone else in the ~10k world, and steps in as the Fallback when the agent fails or its answer breaks a Rule.</p>
+      </div>
+      <div>
+        <h2>Where it runs</h2>
+        <p><code>offer-engine start</code> (or <code>make</code>) runs the four processes together: Offer Bot, Customer Bot simulator, console and live view. For judging, one Docker container runs them and a Cloudflare Tunnel serves the console and live view (T29, in progress).</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+</body></html>
